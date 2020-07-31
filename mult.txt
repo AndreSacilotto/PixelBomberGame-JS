@@ -1,0 +1,13 @@
+ACONTECIMENTOS POSSIVEIS
+
+- player mover-se
+
+- player ser morto
+
+- player spawnar
+
+- bomba ser colocada
+
+- bomba ser movida
+
+- bomba explodir

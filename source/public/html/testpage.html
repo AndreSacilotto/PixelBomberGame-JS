@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Bomber Game</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/ico" href="/assets/bomb.ico">
+</head>
+<body>
+    <div style="background-color: aqua; width: 100vw; height: 100vh;"></div>
+    <script>
+        const strUrl = window.location.href;
+        console.log(strUrl);
+        const url = new URL(strUrl);
+        console.log(url);
+        const p1 = url.searchParams.get("name");
+        const p2 = url.searchParams.get("room");
+        console.log(p1);
+        console.log(p2);
+    </script>
+
+</body>
+</html>
