@@ -39,7 +39,7 @@ export default class ServerObjects{
     removeWall(wall){
         arrayRemove(this.walls, wall);
     }
-    
+
     setupPacket()
     {
         let packet = {
@@ -50,32 +50,29 @@ export default class ServerObjects{
         };
         return packet;
     }
-    makePacketPlayer(player){
-        return { id: player.id, position: player.position}; 
-    }
 
     packetPlayer(){
         let packet = [];
-        for (const x of this.players)
-            packet.push({ id: x.id, position: x.position});   
+        for (const el of this.players)
+            packet.push({ id: el.id, position: el.position});   
         return packet; 
     }
     packetBombs(){
         let packet = [];
-        for (const x of this.bombs)
-            packet.push({ position: x.position});   
+        for (const el of this.bombs)
+            packet.push({ position: el.position});   
         return packet; 
     }
     packetExplosions(){
         let packet = [];
-        for (const x of this.explosions)
-            packet.push({ position: x.position});   
+        for (const el of this.explosions)
+            packet.push({ position: el.position});   
         return packet; 
     }
     packetWalls(){
         let packet = [];
-        for (const x of this.walls)
-            packet.push({ position: x.position});   
+        for (const el of this.walls)
+            packet.push({ position: el.position});   
         return packet; 
     }
 }

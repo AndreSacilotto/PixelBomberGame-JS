@@ -1,6 +1,7 @@
 import Input from "./util/Inputs.js"
 import GameRender from "./util/Render.js"
 import Vector from "./util/Vector.js"
+import ClientObjects from "./util/ClientObjects.js";
 
 // ---------- Local Vars and Events ----------
 const urlParams = new URLSearchParams(window.location.search);
@@ -15,6 +16,8 @@ var time = 0;
 const canvas = document.getElementById("screen");
 /** @type {GameRender} */
 var render;
+/** @type {ClientObjects} */
+var items;
 
 socket.emit("startMatch");
 
@@ -53,7 +56,8 @@ socket.on("message", (msg) => console.log(msg));
 
 socket.on('connect', () => {
     render = new GameRender(canvas, socket.id);
-    console.log(`> You ${username} connected on Client with id: ${socket.id}`);
+    items = render.obj;
+    console.log(`> You connected: ${socket.id} as ${username}`);
     socket.emit("username", username);
 })
 
@@ -61,33 +65,38 @@ socket.on("kick", () => exit("kick"));
 socket.on("disconnect", () => exit("disconnect"));
 
 socket.on('setup', (packet, arena) => {
-    render.size.setByObject(arena);
-    render.setObjects(packet.players, packet.bombs, packet.explosions, packet.walls);
+    render.setSize = arena;
+    items.setAll(packet.players, packet.bombs, packet.explosions, packet.walls);
+    render.renderAll();
+})
+    
+socket.on('setPlayers', (players) => {    
+    items.setPlayers = players;
     render.renderAll();
 })
 
-socket.on('addPlayer', (player) => {
-    render.obj.addPlayer(player);
+socket.on('setBombs', (bombs) => {
+    items.bombs = bombs;
     render.renderAll();
 })
 
-socket.on('removePlayer', (id) => {    
-    render.obj.removePlayer(render.obj.getPlayer(id));
+socket.on('setExplosions', (explosions) => {
+    items.explosions = explosions;
     render.renderAll();
 })
 
-socket.on('updatePlayers', (state) => {
-    console.log("updatePlayers");
+socket.on('setWalls', (walls) => {
+    items.walls = walls;
     render.renderAll();
 })
 
 socket.on('moveX', (id, x) => {
-    render.obj.getPlayer(id).position.x = x;
+    items.players.find(t => t.id === id).position.x = x;
     render.renderAll();
 })
 
 socket.on('moveY', (id, y) => {
-    render.obj.getPlayer(id).position.y = y;
+    items.players.find(t => t.id === id).position.y = y;
     render.renderAll();
 })
 

@@ -55,7 +55,7 @@ function arrayRemove(array = [], element) {
         array.splice(index, 1);
 }
 
-const arenaSize = new Vector(10, 10);
+const arenaSize = new Vector(100, 100);
 
 const game = new ServerObjects();
 
@@ -65,13 +65,15 @@ io.on('connection', (socket) => {
     
     const player = new Player(socket.id);
     game.addPlayer(player);
-    socket.broadcast.emit("addPlayer", game.makePacketPlayer(player));
+
+    socket.broadcast.emit("setPlayers", game.packetPlayer());
+    socket.emit("setup", game.setupPacket(), arenaSize);
 
     // DEFAULT EVENTS
     socket.on('disconnect', () => {
         console.log(`> Player disconnected: ${player.id} - ${player.username}`);
-        io.emit("removePlayer", player.id);
         game.removePlayer(player);
+        io.emit("setPlayers", game.packetPlayer());
     })
 
     // ADM
@@ -100,8 +102,6 @@ io.on('connection', (socket) => {
 
     // GAME
 
-    socket.emit("setup", game.setupPacket(), arenaSize);
-
     socket.on('username', (name) =>{
         if (name !== ""){
             player.username = name;
@@ -111,27 +111,14 @@ io.on('connection', (socket) => {
         }
     })
 
-    socket.on('moveX', (xdir) =>{        
-        if(player.canAct()){
-            player.position.x += xdir * player.stats.speed;
-            if (xdir === 1 && player.position.x >= arenaSize.x)
-                player.position.x = arenaSize.x;
-            else if (xdir === -1 && player.position.x < 0)
-                player.position.x = 0;
-            io.emit("moveX", player.id, player.position.x);
-        }
+    socket.on('moveX', (dirX) =>{             
+        move(player, dirX, arenaSize.x, true);
+        io.emit("moveX", player.id, player.position.x)
     })
 
-    socket.on('moveY', (ydir) =>{
-        console.log(player);
-        if(player.canAct()){
-            player.position.y += ydir * player.stats.speed;
-            if (ydir === 1 && player.position.y >= arenaSize.y)
-                player.position.y = arenaSize.y;
-            else if (ydir === -1 && player.position.y < 0)
-                player.position.y = 0;            
-            io.emit("moveY", player.id, player.position.y);
-        }
+    socket.on('moveY', (dirY) =>{       
+        move(player, dirY, arenaSize.y, false);
+        io.emit("moveY", player.id, player.position.y)
     })
 
     socket.on('placeBomb', () => placeBomb(player));
@@ -139,27 +126,43 @@ io.on('connection', (socket) => {
     socket.on('placeWall', () => null);
 })
 
+/** @param {Player} player */
+function move(player, dir, arenaAxis, isX){
+    if(player.canAct){
+        let movement, vector;
+        if (isX){
+            movement = player.position.x + dir * player.stats.speed;
+            vector = new Vector(movement, player.position.y);
+        }
+        else{
+            movement = player.position.y + dir * player.stats.speed;
+            vector = new Vector(player.position.x, movement);
+        }
+
+        //Verifica se Player
+        //hasSomething(vector, game.players.map(t => t.position));
+        
+        //Verifica se Bomba e Wall existem
+        if (hasSomething(vector, game.bombs).bool && hasSomething(vector, game.walls).bool)
+            return;
+
+        // Verifica se Bordas
+        if (movement >= arenaAxis)
+            movement = 0;
+        else if (movement < 0)
+            movement = arenaAxis-1;
+
+        if (isX) player.position.x = movement;
+        else player.position.y = movement;
+    }
+}
+
 //setTimeout(() => io.emit('browserReload'), 2000);
-
-// -------- REMOVES ---------
-
-function removePlayer(player){
-    arrayRemove(listPlayer, player);
-}
-
-function removeBomb(){
-    arrayRemove(listBombs, player);
-}
-
-function removeWall(){
-    arrayRemove(listWalls, player);
-}
 
 // --------- GAME FUNCS ---------
 
 function updateGame(){
-    const state = new State(listPlayer, listBombs, listWalls);
-    io.emit("update", state);
+    io.emit("setup", game.setupPacket(), arenaSize);
 }
 
 function resetPlayers(){
@@ -170,7 +173,7 @@ function resetPlayers(){
 function killPlayer(playerDead, reason){
     playerDead.alive = false;
     const msg = `> ${playerDead.username} was killed by a ${reason}`
-    console.log(msg);
+    //console.log(msg);
     io.emit("kill", playerDead.id, msg);
 }
 
@@ -178,26 +181,27 @@ function killPlayer(playerDead, reason){
 function placeBomb(player){
     if(player.willPlaceBomb()){
         const bomb = new Bomb(player, new Vector(player.position.x, player.position.y), player.stats.fireRadius, player.stats.firePower);
-        listBombs.push(bomb);
+        game.addBomb(bomb);
         setTimeout(() => bombExplosion(bomb), 2000);
     }
 }
 
 /** @param {Bomb} bomb*/
-function bombExplosion(bomb)
-{
+function bombExplosion(bomb){
     const area = bomb.bombArea();
 
-    for (const p of listPlayer){
-        for (let i = 0; i < area.length; i++) {
-            if (hasPlayer(p, ps))
-                killPlayer(p, `bomb of ${bomb.owner.username}`);
-        }
+    for (const p of game.players){
+        if (hasSomething(p.position, area).bool)
+            killPlayer(p, `bomb of ${bomb.owner.username}`);
     }
-    arrayRemove(listBombs, bomb);
+    game.removeBomb(bomb);
 }
 
-/** @param {Player} player @param {Vector} position */
-function hasPlayer(player, position){
-    return player.position.equalVector(position);
+/** @param {Vector} point @param {Vector[]} positions */
+function hasSomething(point, positions){
+    for (let i = 0; i < positions.length; i++) {
+        if (point.equalVector(positions[i]))
+            return { bool: true, index: i};
+    }
+    return { bool: false, index: -1};
 }

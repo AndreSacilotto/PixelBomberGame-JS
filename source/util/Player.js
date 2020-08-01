@@ -57,7 +57,7 @@ export default class Player{
         return false;
     }
 
-    canAct(){
+    get canAct(){
         return this.alive && this.canMove;
     }
 

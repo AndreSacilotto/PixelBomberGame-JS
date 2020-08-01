@@ -1,48 +1,30 @@
 export default class ClientObjects{
-    constructor(p = [], b = [], w = [], e = []){
+    constructor(p = [], b = [], w = [], e = [], playerId){
         this.players = p;
         this.bombs = b;
         this.walls = w;
         this.explosions = e;
+
+        this.playerId = playerId;
     }
 
-    getPlayer(id){
-        return this.players.find(p => p.id === id);
+    setAll(players, bombs, explosions, walls) {
+        this.setPlayers= players;
+        this.bombs = bombs;
+        this.explosions = explosions;
+        this.walls = walls;
     }
-    addPlayer(player){
-        this.players.push(player);
-    }
-    addBomb(bomb){
-        this.bombs.push(bomb);
-    }
-    addExplosion(explosion){
-        this.explosions.push(explosion);
-    }
-    addWall(wall){
-        this.walls.push(wall);
-    }    
 
-    removePlayer(player){
-        arrayRemove(this.players, player);
+    /** @param {any[]} players */
+    set setPlayers(players){
+        this.players = players;
+        let lastPlayer = this.players.length-1;
+        if (this.players[lastPlayer].id !== this.playerId){
+            let index = this.players.findIndex(p => p.id === this.playerId);
+            let temp = this.players[lastPlayer];
+            this.players[lastPlayer] = this.players[index];
+            this.players[index] = temp;
+        }
     }
-    removeBomb(bomb){
-        arrayRemove(this.bombs, bomb);
-    }
-    removeExplosion(explosion){
-        arrayRemove(this.explosions, explosion);
-    }
-    removeWall(wall){
-        arrayRemove(this.walls, wall);
-    }
-}
 
-/** @param {any[]} array @param {any} element */
-export function arrayRemove(array, element) { 
-    const index = array.indexOf(element);
-    let temp;
-    if (index > -1){
-        temp = array[index];
-        array.splice(index, 1);
-    }
-    return temp;
 }
