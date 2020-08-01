@@ -1,17 +1,27 @@
 import Player from "./Player.js";
 import Bomb from "./Bomb.js";
-import Walls from "./Wall.js";
 import Vector from "../public/js/util/Vector.js";
+import Wall from "./Wall.js";
 
 export default class ServerObjects{
 
     /** @param {Player[]} p @param {Bomb[]} b 
-     * @param {Vector[]} w @param {Vector[]} e */
+     * @param {Wall[]} w @param {Vector[]} e */
     constructor(p = [], b = [], w = [], e = []){
         this.players = p;
         this.bombs = b;
         this.walls = w;
         this.explosions = e;
+    }
+
+    reset(){
+        for (const p of game.players) {
+            p.reset();
+            p.resetPowers();
+        }
+        this.bombs = [];
+        this.walls = [];
+        this.explosions = [];
     }
 
     addPlayer(player){
@@ -22,6 +32,9 @@ export default class ServerObjects{
     }
     addExplosion(explosion){
         this.explosions.push(explosion);
+    }
+    addExplosionArray(explosion){
+        this.explosions = this.explosions.concat(explosion);
     }
     addWall(wall){
         this.walls.push(wall);
@@ -36,40 +49,44 @@ export default class ServerObjects{
     removeExplosion(explosion){
         arrayRemove(this.explosions, explosion);
     }
+    removeExplosionArray(explosion){
+        arrayRemoveArray(this.explosions, explosion);
+    }
     removeWall(wall){
         arrayRemove(this.walls, wall);
     }
 
-    setupPacket()
+    get setupPacket()
     {
         let packet = {
-            players: this.packetPlayer(),
-            bombs: this.packetBombs(),
-            explosions: this.packetExplosions(),
-            walls: this.packetWalls(),
+            players: this.packetPlayer,
+            bombs: this.packetBombs,
+            explosions: this.packetExplosions,
+            walls: this.packetWalls,
         };
         return packet;
     }
 
-    packetPlayer(){
+    get packetPlayer(){
         let packet = [];
         for (const el of this.players)
-            packet.push({ id: el.id, position: el.position});   
+            if (el.alive) 
+                packet.push({ id: el.id, position: el.position});   
         return packet; 
     }
-    packetBombs(){
+    get packetBombs(){
         let packet = [];
         for (const el of this.bombs)
-            packet.push({ position: el.position});   
+        packet.push({ position: el.position});   
         return packet; 
     }
-    packetExplosions(){
+    get packetExplosions(){
         let packet = [];
         for (const el of this.explosions)
-            packet.push({ position: el.position});   
+            packet.push({ position: el});   
         return packet; 
     }
-    packetWalls(){
+    get packetWalls(){
         let packet = [];
         for (const el of this.walls)
             packet.push({ position: el.position});   
@@ -82,4 +99,11 @@ export function arrayRemove(array, element) {
     const index = array.indexOf(element);
     if (index > -1)
         array.splice(index, 1);
+}
+
+/** @param {any[]} array @param {any[]} elements */
+export function arrayRemoveArray(array, elements) { 
+    for (const el of elements) {
+        arrayRemove(array, el)
+    }
 }

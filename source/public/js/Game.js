@@ -19,8 +19,6 @@ var render;
 /** @type {ClientObjects} */
 var items;
 
-socket.emit("startMatch");
-
 // ---------- Inputs ----------
 const inp = new Input();
 
@@ -29,7 +27,7 @@ inp.addInput('down', "s", "ArrowDown", () => moveY(1));
 inp.addInput('right', "d", "ArrowRight", () => moveX(1));
 inp.addInput('left', "a", "ArrowLeft",() => moveX(-1));
 inp.addInput('bomb', "j", "z", () => placeBomb());
-inp.addInput('wall', "k", "x", () => null);
+inp.addInput('wall', "k", "x", () => createWall());
 
 // ---------- Operations ----------
 
@@ -49,6 +47,7 @@ function exit(reason){
 }
 
 // ---------- Game Events (Received) ----------
+socket.emit("startMatch");
 
 socket.on("console", (log) => console.log(log));
 
@@ -91,12 +90,16 @@ socket.on('setWalls', (walls) => {
 })
 
 socket.on('moveX', (id, x) => {
-    items.players.find(t => t.id === id).position.x = x;
+    const element = items.players.find(t => t.id === id);
+    if (element)
+        element.position.x = x;
     render.renderAll();
 })
 
 socket.on('moveY', (id, y) => {
-    items.players.find(t => t.id === id).position.y = y;
+    const element = items.players.find(t => t.id === id);
+    if (element)
+        element.position.y = y;
     render.renderAll();
 })
 
@@ -114,5 +117,5 @@ function placeBomb(){
 }
 
 function createWall(){
-    socket.emit("newWall");  
+    socket.emit("createWall");  
 }
