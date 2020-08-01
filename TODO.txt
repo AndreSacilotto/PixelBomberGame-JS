@@ -1,0 +1,21 @@
+        FALTA
+Painel ADM
+
+Power Ups (Tudo)
+
+Client Interface
+
+Spawnar Aleatorio
+
+Fazer Skins
+
+Melhorar colissão
+
+Parar Explosão nas Paredes
+
+Opc:
+Criar Fases
+Fazer um Lobby
+Canvas Works without Width = Height
+Colocar Som
+Fazer vários PowerUps Fodas

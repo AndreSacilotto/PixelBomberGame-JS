@@ -3,63 +3,63 @@ import Bomb from "./Bomb.js";
 import Vector from "../public/js/util/Vector.js";
 import Wall from "./Wall.js";
 
-export default class ServerObjects{
+export default class ServerObjects {
 
-    /** @param {Player[]} p @param {Bomb[]} b 
-     * @param {Wall[]} w @param {Vector[]} e */
-    constructor(p = [], b = [], w = [], e = []){
-        this.players = p;
-        this.bombs = b;
-        this.walls = w;
-        this.explosions = e;
+    /**@param {Vector} arena 
+     * @param {Player[]} players @param {Bomb[]} bombs 
+     * @param {Wall[]} walls @param {Vector[]} explosions */
+    constructor(arena, players = [], bombs = [], walls = [], explosions = []) {
+        this.players = players;
+        this.bombs = bombs;
+        this.walls = walls;
+        this.explosions = explosions;
+
+        this.arena = arena;
     }
 
-    reset(){
-        for (const p of game.players) {
+    reset() {
+        for (const p of this.players)
             p.reset();
-            p.resetPowers();
-        }
         this.bombs = [];
         this.walls = [];
         this.explosions = [];
     }
 
-    addPlayer(player){
+    addPlayer(player) {
         this.players.push(player);
     }
-    addBomb(bomb){
+    addBomb(bomb) {
         this.bombs.push(bomb);
     }
-    addExplosion(explosion){
+    addExplosion(explosion) {
         this.explosions.push(explosion);
     }
-    addExplosionArray(explosion){
+    addExplosionArray(explosion = []) {
         this.explosions = this.explosions.concat(explosion);
     }
-    addWall(wall){
+    addWall(wall) {
         this.walls.push(wall);
-    }    
+    }
 
-    removePlayer(player){
+    removePlayer(player) {
         arrayRemove(this.players, player);
     }
-    removeBomb(bomb){
+    removeBomb(bomb) {
         arrayRemove(this.bombs, bomb);
     }
-    removeExplosion(explosion){
+    removeExplosion(explosion) {
         arrayRemove(this.explosions, explosion);
     }
-    removeExplosionArray(explosion){
+    removeExplosionArray(explosion = []) {
         arrayRemoveArray(this.explosions, explosion);
     }
-    removeWall(wall){
+    removeWall(wall) {
         arrayRemove(this.walls, wall);
     }
 
-    get setupPacket()
-    {
+    get setupPacket() {
         let packet = {
-            players: this.packetPlayer,
+            players: this.packetPlayers,
             bombs: this.packetBombs,
             explosions: this.packetExplosions,
             walls: this.packetWalls,
@@ -67,42 +67,42 @@ export default class ServerObjects{
         return packet;
     }
 
-    get packetPlayer(){
+    get packetPlayers() {
         let packet = [];
         for (const el of this.players)
-            if (el.alive) 
-                packet.push({ id: el.id, position: el.position});   
-        return packet; 
+            if (el.alive)
+                packet.push({ id: el.id, position: el.position });
+        return packet;
     }
-    get packetBombs(){
+    get packetBombs() {
         let packet = [];
         for (const el of this.bombs)
-        packet.push({ position: el.position});   
-        return packet; 
+            packet.push({ position: el.position });
+        return packet;
     }
-    get packetExplosions(){
+    get packetExplosions() {
         let packet = [];
         for (const el of this.explosions)
-            packet.push({ position: el});   
-        return packet; 
+            packet.push({ position: el });
+        return packet;
     }
-    get packetWalls(){
+    get packetWalls() {
         let packet = [];
         for (const el of this.walls)
-            packet.push({ position: el.position});   
-        return packet; 
+            packet.push({ position: el.position });
+        return packet;
     }
 }
 
 /** @param {any[]} array @param {any} element */
-export function arrayRemove(array, element) { 
+export function arrayRemove(array, element) {
     const index = array.indexOf(element);
     if (index > -1)
         array.splice(index, 1);
 }
 
 /** @param {any[]} array @param {any[]} elements */
-export function arrayRemoveArray(array, elements) { 
+export function arrayRemoveArray(array, elements) {
     for (const el of elements) {
         arrayRemove(array, el)
     }

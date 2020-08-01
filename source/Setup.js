@@ -11,7 +11,7 @@ import { fileURLToPath } from 'url';
 const app = express();
 
 export const server = http.createServer(app);
-export var io = socketio(server);
+export const io = socketio(server);
 
 // ------------ SERVER CREATION ------------
 

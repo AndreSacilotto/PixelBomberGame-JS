@@ -10,7 +10,7 @@ export default class Bomb {
         this.power = bombPower;
     }
 
-    /** @param {Vector} size */
+    /** @param {Vector} size @returns {Vector[]}*/
     bombArea(size) {
         /** @type {Vector[]} arr */
         const arr = [];
@@ -34,23 +34,21 @@ export default class Bomb {
             }
         }
 
-        //TODO make bombs pass the margins
-        const outAreas = arr.filter(a => a.x < 0 || a.y < 0 || a.x >= size.x || a.y >= size.y);
-        
-        for (let i = 0; i < outAreas.length; i++) {
-            if (outAreas[i].x < 0)
-            outAreas[i].x += size.x;
-            else if (outAreas[i].x >= size.x)
-            outAreas[i].x -= size.x;
-            
-            if (outAreas[i].y < 0)
-            outAreas[i].y += size.y;
-            else if (outAreas[i].y >= size.y)
-            outAreas[i].y -= size.y;
-        }
+        //Bomb and Margins
+        const outAreas = arr.filter(a => a.x < 0 || a.y < 0 || a.x >= size.x || a.y >= size.y).forEach(a => {
+            if (a.x < 0)
+                a.x += size.x;
+            else if (a.x >= size.x)
+                a.x -= size.x;
+
+            if (a.y < 0)
+                a.y += size.y;
+            else if (a.y >= size.y)
+                a.y -= size.y;
+        });
 
         return arr;
-        
+
     }
 
 }

@@ -1,7 +1,8 @@
+import ClientObjects from "./util/ClientObjects.js";
+
 import Input from "./util/Inputs.js"
 import GameRender from "./util/Render.js"
 import Vector from "./util/Vector.js"
-import ClientObjects from "./util/ClientObjects.js";
 
 // ---------- Local Vars and Events ----------
 const urlParams = new URLSearchParams(window.location.search);
@@ -17,7 +18,7 @@ const canvas = document.getElementById("screen");
 /** @type {GameRender} */
 var render;
 /** @type {ClientObjects} */
-var items;
+var itens;
 
 // ---------- Inputs ----------
 const inp = new Input();
@@ -46,70 +47,13 @@ function exit(reason){
     document.location.reload(true);
 }
 
-// ---------- Game Events (Received) ----------
-socket.emit("startMatch");
-
-socket.on("console", (log) => console.log(log));
-
-socket.on("message", (msg) => console.log(msg));
-
-socket.on('connect', () => {
-    render = new GameRender(canvas, socket.id);
-    items = render.obj;
-    console.log(`> You connected: ${socket.id} as ${username}`);
-    socket.emit("username", username);
-})
-
-socket.on("kick", () => exit("kick"));
-socket.on("disconnect", () => exit("disconnect"));
-
-socket.on('setup', (packet, arena) => {
-    render.setSize = arena;
-    items.setAll(packet.players, packet.bombs, packet.explosions, packet.walls);
-    render.renderAll();
-})
-    
-socket.on('setPlayers', (players) => {    
-    items.setPlayers = players;
-    render.renderAll();
-})
-
-socket.on('setBombs', (bombs) => {
-    items.bombs = bombs;
-    render.renderAll();
-})
-
-socket.on('setExplosions', (explosions) => {
-    items.explosions = explosions;
-    render.renderAll();
-})
-
-socket.on('setWalls', (walls) => {
-    items.walls = walls;
-    render.renderAll();
-})
-
-socket.on('moveX', (id, x) => {
-    const element = items.players.find(t => t.id === id);
-    if (element)
-        element.position.x = x;
-    render.renderAll();
-})
-
-socket.on('moveY', (id, y) => {
-    const element = items.players.find(t => t.id === id);
-    if (element)
-        element.position.y = y;
-    render.renderAll();
-})
-
 // ---------- Game Events (Send) ----------
 
 function moveX(dirX){
-    socket.emit("moveX", dirX);
+    socket.emit("move", dirX, true);
 }
 function moveY(dirY){
-    socket.emit("moveY", dirY);
+    socket.emit("move", dirY, false);
 }
 
 function placeBomb(){
@@ -119,3 +63,46 @@ function placeBomb(){
 function createWall(){
     socket.emit("createWall");  
 }
+
+// ---------- Game Events (Received) ----------
+
+socket.on("console", (log) => console.log(log));
+
+socket.on("message", (msg) => console.log(msg));
+
+socket.on('connect', () => {
+    itens = new ClientObjects(socket.id)
+    render = new GameRender(canvas, itens);
+    socket.emit("setName", username);    
+    //DELETE THE LINE BELOW
+    socket.emit("startMatch");    
+})
+
+socket.on("kick", () => exit("kick"));
+socket.on("disconnect", () => exit("disconnect"));
+
+socket.on('setup', (packet, arena) => {
+    render.setSize = arena;
+    itens.setAll(packet.players, packet.bombs, packet.explosions, packet.walls);
+    render.renderAll();
+})
+    
+socket.on('setPlayers', (players) => {    
+    itens.setPlayers = players;
+    render.renderAll();
+})
+
+socket.on('setBombs', (bombs) => {
+    itens.bombs = bombs;
+    render.renderAll();
+})
+
+socket.on('setExplosions', (explosions) => {
+    itens.explosions = explosions;
+    render.renderAll();
+})
+
+socket.on('setWalls', (walls) => {
+    itens.walls = walls;
+    render.renderAll();
+})

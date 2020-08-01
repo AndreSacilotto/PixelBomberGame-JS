@@ -1,11 +1,12 @@
 export default class ClientObjects {
-    constructor(p = [], b = [], w = [], e = [], playerId) {
+    constructor(playerId, p = [], b = [], w = [], e = []) {
         this.players = p;
         this.bombs = b;
         this.walls = w;
         this.explosions = e;
 
         this.playerId = playerId;
+        this.localPlayer;
     }
 
     setAll(players, bombs, explosions, walls) {
@@ -16,19 +17,13 @@ export default class ClientObjects {
     }
 
     /** @param {any[]} players */
-    set setPlayers(players) {
+    set setPlayers(players){
+        this.localPlayer = undefined;
+        const index = players.findIndex(p => p.id === this.playerId);        
+        if (index > -1){
+            this.localPlayer = players[index];
+            players.splice(index, 1);
+        }        
         this.players = players;
-        if (this.players.length > 0) {
-            let lastPlayer = this.players.length - 1;
-            if (this.players[lastPlayer].id !== this.playerId) {
-                let index = this.players.findIndex(p => p.id === this.playerId);
-                if (index){
-                    let temp = this.players[lastPlayer];
-                    this.players[lastPlayer] = this.players[index];
-                    this.players[index] = temp;
-                }
-            }
-        }
     }
-
 }

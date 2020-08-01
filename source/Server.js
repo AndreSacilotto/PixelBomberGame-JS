@@ -2,47 +2,60 @@ import moment from 'moment';
 import { io, server } from "./Setup.js"
 
 import Player from "./util/Player.js";
-import Vector from "./public/js/util/Vector.js";
 
 import * as logic from "./GameLogic.js";
-// ------------ SOCKETING ------------
+import * as net from "./NetworkManager.js"
 
 server.on("close", () => console.log("Closing server"));
 
+const admPlayer = new Player("adm", "adm");
+
 io.on('connection', (socket) => {
 
-    const player = new Player(socket.id);
-    logic.objects.addPlayer(player);
+    // ----------- START AND DEFAULT EVENTS -----------
+    const player = net.createNewPlayer(socket)
 
-    socket.broadcast.emit("setPlayers", game.packetPlayer);
-    socket.emit("setup", game.setupPacket, arenaSize);
-
-    // DEFAULT EVENTS
     socket.on('disconnect', () => {
-        console.log(`> Player disconnected: ${player.id} - ${player.username}`);
-        game.removePlayer(player);
-        io.emit("setPlayers", game.packetPlayer);
+        console.log(`> Player disconnected: ${player.id} as ${player.username} at ${moment.now()}`);
+        net.deletePlayer(player);
     })
 
-    // ADM
-    socket.on("console", (log) => console.log(log));
+    socket.on('setName', (name) => {
+        if (name)
+             player.username = name;
+        const msg = `> Player connected: ${player.id} as ${player.username} at ${moment.now()}`;
+        net.messageBi(msg);
+    })
+
+    // ------------ ADM ------------
+    socket.on("message", (log) => console.log(log));
 
     socket.on("startMatch", () => {
-        game.players.forEach(p => p.active());
-        socket.emit("setup", game.setupPacket, arenaSize);
+        logic.startMatch();
     })
 
     socket.on("endMatch", () => {
-        game.Reset();
+        logic.endMatch();
     })
 
-    socket.on("admRevive", (id, x, y) => {
+    socket.on("admRevive", (id, x, y, reset) => {
+        const p = net.objects.players.find(p => p.id == id);
+        if (p){
+            p.active();
+            if (reset) p.reset();
+            p.position.x = x;
+            p.position.y = y;
+            net.setPlayers();
+        }
     })
 
     socket.on("admPlaceBomb", (x, y, power, radius) => {
+        const bomb = net.createBomb(admPlayer, x, y, power, radius);
+        logic.placeBomb(bomb);
     })
 
-    socket.on("admPlaceWall", (x, y) => {
+    socket.on("admPlaceWall", (x, y, des, move) => {
+        net.createWall(x, y, des, move);
     })
 
     socket.on("kick", (id) => {
@@ -50,28 +63,22 @@ io.on('connection', (socket) => {
         io.sockets.sockets[id].disconnect();
     })
 
-    // GAME
+    //------------ Player ------------
 
-    socket.on('username', (name) => {
-        if (name !== "") {
-            player.username = name;
-            const msg = `> Player connected: ${player.id} as ${player.username}`;
-            console.log(msg);
-            socket.broadcast.emit('message', msg);
+    socket.on('placeBomb', () => {
+        if (player.canPlaceBomb) {
+            const bomb = net.createBomb(player, player.position.x, player.position.y, player.stats.firePower, player.stats.fireRadius);
+            logic.placeBomb(bomb);
         }
     })
 
-    socket.on('moveX', (dirX) => {
-        move(player, dirX, arenaSize.x, true);
-        io.emit("moveX", player.id, player.position.x)
+    socket.on('createWall', () => {
+        net.createWall(player.position.x, player.position.y, false, false);
     })
 
-    socket.on('moveY', (dirY) => {
-        move(player, dirY, arenaSize.y, false);
-        io.emit("moveY", player.id, player.position.y)
+    socket.on("move", (dir, isX) => {
+        logic.move(player, dir, isX);
+        net.setPlayers();
     })
-
-    socket.on('placeBomb', () => placeBomb(player));
-
-    socket.on('createWall', () => createWall(new Vector(player.position.x, player.position.y)));
+    
 })

@@ -3,18 +3,16 @@ import Vector from "../public/js/util/Vector.js"
 export default class Player {
     constructor(id, username = "Guest" + Math.round(Math.random() * 10000)) {
         this.id = id;
-        this.username = username;
-
-        this.stats;
-        this.powers;
+        this.username = username;    
 
         this.position = new Vector();
-        this.usedBombs = 0;
-
         this.alive = false;
         this.canMove = false;
-
-        this.resetPowers();
+        this.usedBombs = 0;        
+        
+        this.stats;
+        this.powers;
+        this.resetStats();
     }
 
     active() {
@@ -27,11 +25,12 @@ export default class Player {
         this.alive = false;
         this.canMove = false;
         this.usedBombs = 0;
+        this.resetStats();
     }
 
-    resetPowers() {
+    resetStats() {
         this.stats = {
-            lifes: 1,
+            life: 1,
             maxBombs: 1,
             firePower: 2,
             fireRadius: 0,
@@ -49,7 +48,15 @@ export default class Player {
         };
     }
 
-    willPlaceBomb() {
+    /** @param {number} damage */
+    set receiveDamage(damage){
+        this.stats.life -= damage;
+        if (this.stats.life <= 0){
+            this.alive = false;
+        }
+    }
+
+    get canPlaceBomb() {
         if (this.canAct && this.usedBombs < this.stats.maxBombs) {
             this.usedBombs++;
             return true;

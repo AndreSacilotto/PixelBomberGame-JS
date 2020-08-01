@@ -1,27 +1,39 @@
 import { io } from "./Setup.js"
+import * as net from "./NetworkManager.js"
 
 import Player from "./util/Player.js";
 import Bomb from "./util/Bomb.js";
 
-import ServerObjects from './util/ServerObjects.js';
 import Vector from "./public/js/util/Vector.js";
 import Wall from './util/Wall.js';
 
-/** @type {SocketIO.Server} */
-export var arenaSize = new Vector(15, 15);
-export var objects = new ServerObjects();
-export var bombTime = 5000;
-export var explosionTime = 1000;
+const objects = net.objects;
+
+export const bombTime = 2000;
+export const explosionTime = 1000;
+
+export function startMatch(){
+    objects.reset();
+    objects.players.forEach( p => p.active());
+    net.setAll();
+}
+
+export function endMatch(){
+    objects.reset();
+    net.setAll();
+}
 
 /** @param {Player} player */
-export function move(player, dir, arenaAxis, isX) {
+export function move(player, dir, isX) {
     if (player.canAct) {
-        let movement, vector;
+        let movement, vector, arenaAxis;
         if (isX) {
+            arenaAxis = objects.arena.x;
             movement = player.position.x + dir * player.stats.speed;
             vector = new Vector(movement, player.position.y);
         }
         else {
+            arenaAxis = objects.arena.y;
             movement = player.position.y + dir * player.stats.speed;
             vector = new Vector(player.position.x, movement);
         }
@@ -56,52 +68,38 @@ export function move(player, dir, arenaAxis, isX) {
     }
 }
 
-// --------- GAME FUNCS ---------
 
-export function killPlayer(playerDead, reason) {
-    playerDead.alive = false;
-    const msg = `> ${playerDead.username} was killed by a ${reason}`;
-    io.emit("setPlayers", objects.packetPlayer);
-    io.emit("message", msg);
-}
-
-export function createWall(position, destructible = false, moveable = false) {
-    const wall = new Wall(destructible, moveable, position);
-    objects.addWall(wall);
-    io.emit("setWalls", objects.packetWalls);
-}
+// GAME FUNCTIONS
 
 /** @param {Player} player*/
-export function placeBomb(player) {
-    if (player.willPlaceBomb()) {
-        const bomb = new Bomb(player, new Vector(player.position.x, player.position.y), player.stats.firePower, player.stats.fireRadius);
-        objects.addBomb(bomb);
-        io.emit("setBombs", objects.packetBombs);
-        setTimeout(() => bombExplosion(bomb), bombTime);
+export function damagePlayer(player, damage, reason) {
+    player.receiveDamage = damage;
+    if (!player.alive){
+        const msg = `> ${player.username} was killed by a ${reason}`;
+        net.setPlayers();
+        net.message(msg);
     }
 }
 
 /** @param {Bomb} bomb*/
-export function bombExplosion(bomb) {
-    const area = bomb.bombArea(arenaSize);
-    objects.addExplosionArray(area);
-    io.emit("setExplosions", objects.packetExplosions);
-    setTimeout(() => endExplosion(area), explosionTime);
-
-    for (const p of objects.players) {
-        if (hasSomething(p.position, area).bool)
-            killPlayer(p, `bomb of ${bomb.owner.username}`);
-    }
-
-    bomb.owner.usedBombs--;
-    objects.removeBomb(bomb);
-    io.emit("setBombs", objects.packetBombs);
+export function placeBomb(bomb) {
+    setTimeout(() => bombExplosion(bomb), bombTime);
 }
 
-/** @param {Vector[]} area*/
-export function endExplosion(area) {
-    objects.removeExplosionArray(area);
-    io.emit("setExplosions", objects.packetExplosions);
+/** @param {Bomb} bomb*/
+export function bombExplosion(bomb) {
+    const area = bomb.bombArea(objects.arena);
+    net.createExplosion(area);
+    
+    for (const p of objects.players) {
+        if (hasSomething(p.position, area).bool)
+            damagePlayer(p, 1, `bomb of ${bomb.owner.username}`);
+    }
+
+    setTimeout(() => net.deleteExplosion(area), explosionTime);
+    
+    bomb.owner.usedBombs--;
+    net.deleteBomb(bomb);
 }
 
 /** @param {Vector} point @param {Vector[]} positions */
